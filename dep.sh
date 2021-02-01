@@ -3,7 +3,7 @@ if [ ! -d ~/.ssh ]; then
     chmod 700 ~/.ssh
 fi
 
-base64 --decode ${CUSTOM_SSH_KEY} > ~/.ssh/custom_key
+echo ${CUSTOM_SSH_KEY} | base64 --decode > ~/.ssh/custom_key
 
 chmod 400 ~/.ssh/custom_key
 
