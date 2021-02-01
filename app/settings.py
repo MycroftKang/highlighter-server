@@ -164,7 +164,11 @@ if not DEBUG:
     # SECURE_REDIRECT_EXEMPT = []
     SECURE_SSL_REDIRECT = False
     # SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    ALLOWED_HOSTS = ["*"]
+    ALLOWED_HOSTS = (
+        os.getenv("ALLOWED_HOSTS").split(",")
+        if os.getenv("ALLOWED_HOSTS") is not None
+        else ["*"]
+    )
 else:
     REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(
         "rest_framework.renderers.BrowsableAPIRenderer"
