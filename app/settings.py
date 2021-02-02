@@ -34,6 +34,8 @@ DEBUG = os.environ.get("ENVIRONMENT", "development") == "development"
 
 ALLOWED_HOSTS = []
 
+LOGIN_REDIRECT_URL = "/swagger"
+
 # Application definition
 
 INSTALLED_APPS = [
