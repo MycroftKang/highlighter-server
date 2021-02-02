@@ -72,9 +72,14 @@ class HighlighterModelView(APIView):
         },
     )
     def get(self, request: Request, vid: int):
-        limit = int(request.GET.get("limit"))
+        limit = request.GET.get("limit")
 
-        if (limit is None) or (limit > 3):
+        if limit is None:
+            limit = 3
+        else:
+            limit = int(limit)
+
+        if limit > 3:
             limit = 3
 
         vcd = dsloader.load_chats_by_vid(vid)
@@ -178,9 +183,6 @@ class HighlightVoteView(APIView):
         except jwt.InvalidTokenError as e:
             print(e)
             raise rest_framework.exceptions.ValidationError()
-
-        print(payload)
-        print(type(payload))
 
         vd = Video.objects.get(id=payload["vid"])
         hrange, _ = HighlightRange.objects.get_or_create(

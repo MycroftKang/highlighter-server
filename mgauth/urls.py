@@ -31,7 +31,7 @@ token_create_view = swagger_auto_schema(
     operation_summary="Create a user api token",
     security=[],
     responses={
-        status.HTTP_201_CREATED: openapi.Response(
+        status.HTTP_200_OK: openapi.Response(
             "",
             examples={
                 "application/json": {"access": "string", "refresh": "string"},
@@ -41,14 +41,24 @@ token_create_view = swagger_auto_schema(
 )(TokenObtainPairView.as_view())
 
 token_refresh_view = swagger_auto_schema(
-    "POST", operation_summary="Refresh a user api token", security=[]
+    "POST",
+    operation_summary="Refresh a user api token",
+    security=[],
+    responses={
+        status.HTTP_200_OK: openapi.Response(
+            "",
+            examples={
+                "application/json": {"access": "string", "refresh": "string"},
+            },
+        ),
+    },
 )(TokenRefreshView.as_view())
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("auth/token/", token_create_view, name="token_obtain_pair"),
+    path("auth/token", token_create_view, name="token_obtain_pair"),
     path(
-        "auth/token/refresh/",
+        "auth/token/refresh",
         token_refresh_view,
         name="token_refresh",
     ),
