@@ -38,8 +38,8 @@ schema_view = get_schema_view(
         # contact=openapi.Contact(email="contact@snippets.local"),
         # license=openapi.License(name="BSD License"),
     ),
-    validators=["flex", "ssv"],
-    public=DEBUG,
+    validators=["ssv"],
+    public=False,
     permission_classes=(permissions.AllowAny,),
 )
 
@@ -57,16 +57,16 @@ urlpatterns = [
         "robots.txt",
         TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
     ),
-    path("highlighter/", include("highlighter_api.urls")),
+    path("highlighter", include("highlighter_api.urls")),
     path("", include("mgauth.urls")),
     path("accounts/", include("rest_framework.urls", namespace="rest_framework")),
     path(
-        "docs/",
+        "docs",
         docs_view,
         name="schema-redoc",
     ),
     path(
-        "swagger/",
+        "swagger",
         swagger_view,
         name="schema-swagger-ui",
     ),

@@ -7,7 +7,7 @@ from rest_framework_simplejwt import views as jwt_views
 
 from mgauth import views
 
-router = routers.DefaultRouter()
+router = routers.DefaultRouter(trailing_slash=False)
 router.register(r"users", views.UserViewSet)
 router.register(r"groups", views.GroupViewSet)
 
