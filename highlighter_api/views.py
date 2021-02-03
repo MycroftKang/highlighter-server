@@ -159,7 +159,7 @@ class HighlightVoteView(APIView):
             type=openapi.TYPE_OBJECT,
         ),
         responses={
-            status.HTTP_201_CREATED: openapi.Response(
+            status.HTTP_200_OK: openapi.Response(
                 "",
                 examples={
                     "application/json": {
@@ -198,4 +198,4 @@ class HighlightVoteView(APIView):
         else:
             raise Http404
 
-        return Response({"notice": msg})
+        return Response({"notice": msg}, status=status.HTTP_200_OK)
