@@ -88,7 +88,7 @@ class HighlighterModelView(APIView):
             return Response(
                 {
                     "detail": "Not Found",
-                    "notice": "Highlighter is not yet available for this video",
+                    "notice": "Highlighter is not yet supported for this video",
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
