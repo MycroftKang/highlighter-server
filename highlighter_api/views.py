@@ -3,9 +3,8 @@ import datetime
 import jwt
 import rest_framework.exceptions
 from app.settings import SECRET_KEY
-from django.db.models.manager import BaseManager
+from django.db.models.query import QuerySet
 from django.http import Http404
-from django.shortcuts import render
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from highlighter.predict import Predictor
@@ -15,7 +14,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import HighlightRange, Video
+from .models import HighlightRange, UserVote, Video
 
 dsloader = DataSetLoader()
 predictor = Predictor()
@@ -38,7 +37,7 @@ class HighlighterModelView(APIView):
                 openapi.IN_QUERY,
                 "Maximum number of highlight ranges",
                 type=openapi.TYPE_INTEGER,
-                maximum=3,
+                maximum=10,
                 minimum=1,
                 default=3,
             ),
@@ -55,6 +54,9 @@ class HighlighterModelView(APIView):
                                 "id": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
                                 "start": 1905,
                                 "end": 1955,
+                                "probability": 0.8838140368461609,
+                                "upvoted": True,
+                                "downvoted": False,
                             }
                         ],
                     },
@@ -65,7 +67,7 @@ class HighlighterModelView(APIView):
                 examples={
                     "application/json": {
                         "detail": "Not Found",
-                        "notice": "Highlighter is not yet available for this video",
+                        "notice": "Highlighter is not yet supported for this video",
                     },
                 },
             ),
@@ -79,8 +81,8 @@ class HighlighterModelView(APIView):
         else:
             limit = int(limit)
 
-        if limit > 3:
-            limit = 3
+        if limit > 10:
+            limit = 10
 
         vcd = dsloader.load_chats_by_vid(vid)
 
@@ -93,18 +95,27 @@ class HighlighterModelView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        Video.objects.get_or_create(id=vcd.vid, duration=vcd.vlen)
+        vd, _ = Video.objects.get_or_create(id=vcd.vid, duration=vcd.vlen)
 
         vcd = dsloader.load_chats_by_vid(vid)
-        vranges = predictor.get_highlight_ranges(vcd, limit, True)
+        vranges = predictor.get_highlight_ranges(vcd, limit)
+
         now = datetime.datetime.utcnow()
         delta = datetime.timedelta(days=1, seconds=5)
+
+        vote_query_list: QuerySet = vd.highlight_ranges.filter(
+            highlight_range_votes__user=request.user,
+            start__in=[d[0] for d in vranges],
+            end__in=[d[1] for d in vranges],
+        ).values_list("start", "end", "highlight_range_votes__vote_type")
+
         payload = {
             "aud": str(request.user.id),
             "exp": now + delta,
             "iat": now,
             "vid": vcd.vid,
         }
+
         hls = [
             {
                 "id": jwt.encode(
@@ -119,6 +130,9 @@ class HighlighterModelView(APIView):
                 "start": v[0],
                 "end": v[1],
                 "probability": v[2],
+                "upvoted": (v[0], v[1], UserVote.VoteType.UPVOTE) in vote_query_list,
+                "downvoted": (v[0], v[1], UserVote.VoteType.DOWNVOTE)
+                in vote_query_list,
             }
             for v in vranges
         ]

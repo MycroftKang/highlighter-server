@@ -57,7 +57,7 @@ urlpatterns = [
         "robots.txt",
         TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
     ),
-    path("highlighter", include("highlighter_api.urls")),
+    path("highlighter/", include("highlighter_api.urls")),
     path("", include("mgauth.urls")),
     path("accounts/", include("rest_framework.urls", namespace="rest_framework")),
     path(

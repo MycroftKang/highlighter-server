@@ -1,4 +1,4 @@
-git+https://github.com/MycroftKang/highlighter-core.git@57c09d5ba2f90319f2170dfce1b863e0f823b663
+git+https://github.com/MycroftKang/highlighter-core.git@b9ab620286865048790d85630810990409ef83db
 black==20.8b1
 drf-yasg[validation]==1.20.0
 Django==3.1.5

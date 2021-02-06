@@ -19,7 +19,7 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 
 # Quick-start development settings - unsuitable for production
@@ -30,7 +30,7 @@ SECRET_KEY = "4$g^7o^(d&8wedlitw6#a(#cx(z4@w2_^_+60k(u)-vxk+t73f"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
-DEBUG = os.environ.get("ENVIRONMENT", "development") == "development"
+DEBUG = ENVIRONMENT == "development"
 
 ALLOWED_HOSTS = []
 
@@ -154,7 +154,13 @@ SWAGGER_SETTINGS = {
     },
 }
 
-if not DEBUG:
+# SESSION_COOKIE_AGE = 10
+
+if ENVIRONMENT == "development":
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(
+        "rest_framework.renderers.BrowsableAPIRenderer"
+    )
+else:
     from django.core.management.utils import get_random_secret_key
 
     SECRET_KEY = os.getenv("SECRET_KEY", get_random_secret_key())
@@ -164,16 +170,12 @@ if not DEBUG:
     # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     # SECURE_HSTS_SECONDS = 31536000
     # SECURE_REDIRECT_EXEMPT = []
-    SECURE_SSL_REDIRECT = False
-    # SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     ALLOWED_HOSTS = (
         os.getenv("ALLOWED_HOSTS").split(",")
         if os.getenv("ALLOWED_HOSTS") is not None
         else ["*"]
-    )
-else:
-    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(
-        "rest_framework.renderers.BrowsableAPIRenderer"
     )
 
 SIMPLE_JWT = {
