@@ -157,7 +157,7 @@ class HighlightVoteView(APIView):
                 openapi.IN_PATH,
                 "Voting type",
                 type=openapi.TYPE_STRING,
-                enum=["upvote", "downvote", "romovevote"],
+                enum=["upvote", "downvote", "removevote"],
             ),
         ],
         request_body=openapi.Schema(
@@ -207,7 +207,7 @@ class HighlightVoteView(APIView):
             msg = hrange.upvote(request.user)
         elif action == "downvote":
             msg = hrange.downvote(request.user)
-        elif action == "romovevote":
+        elif action == "removevote":
             msg = hrange.remove_vote(request.user)
         else:
             raise Http404
