@@ -1,6 +1,10 @@
 import datetime
+import os
+import threading
+import time
 
 import jwt
+import pandas as pd
 import rest_framework.exceptions
 from app.settings import SECRET_KEY
 from django.db.models.query import QuerySet
@@ -8,7 +12,8 @@ from django.http import Http404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from highlighter.predict import Predictor
-from highlighter.utils.load import DataSetLoader
+from highlighter.utils.fetch import TwitchCrawler
+from highlighter.utils.load import DataSetLoader, VideoChatsData
 from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -18,6 +23,12 @@ from .models import HighlightRange, UserVote, Video
 
 dsloader = DataSetLoader()
 predictor = Predictor()
+
+crawler_lock = threading.Lock()
+
+
+class Cache:
+    BEARER_TOKEN = None
 
 
 class HighlighterModelView(APIView):
@@ -87,17 +98,45 @@ class HighlighterModelView(APIView):
         vcd = dsloader.load_chats_by_vid(vid)
 
         if vcd is None:
-            return Response(
-                {
-                    "detail": "Not Found",
-                    "notice": "Highlighter is not yet supported for this video",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            if not crawler_lock.acquire(timeout=3):
+                return Response(
+                    {
+                        "detail": "Service Unavailable",
+                        "notice": "The service is currently unavailable. Please retry in a minute.",
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+
+            if Cache.BEARER_TOKEN is None:
+                Cache.BEARER_TOKEN = TwitchCrawler.get_twitch_token(
+                    os.getenv("twitch_id"), os.getenv("twitch_secret")
+                )
+
+            crawler = TwitchCrawler(os.getenv("twitch_id"), Cache.BEARER_TOKEN)
+
+            vlen = crawler.get_video_duration(vid)
+
+            if vlen > 5 * 60 * 60:
+                return Response(
+                    {
+                        "detail": "Not Found",
+                        "notice": "Highlighter is not yet supported for this video",
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            st = time.time()
+            df: pd.DataFrame = crawler.get_chats(vid, vlen, worker=10)
+            et = time.time()
+
+            print(f"[Fetch] vid: {vid}, vlen: {vlen}, time: {et - st}")
+
+            df = df.drop("id", axis=1)
+            vcd = VideoChatsData(vid, vlen, df)
+            crawler_lock.release()
 
         vd, _ = Video.objects.get_or_create(id=vcd.vid, duration=vcd.vlen)
 
-        vcd = dsloader.load_chats_by_vid(vid)
         vranges = predictor.get_highlight_ranges(vcd, limit)
 
         now = datetime.datetime.utcnow()
