@@ -98,14 +98,14 @@ class HighlighterModelView(APIView):
         vcd = dsloader.load_chats_by_vid(vid)
 
         if vcd is None:
-            if not crawler_lock.acquire(timeout=3):
-                return Response(
-                    {
-                        "detail": "Service Unavailable",
-                        "notice": "The service is currently unavailable. Please retry in a minute.",
-                    },
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                )
+            # if not crawler_lock.acquire(timeout=3):
+            #     return Response(
+            #         {
+            #             "detail": "Service Unavailable",
+            #             "notice": "The service is currently unavailable. Please retry in a minute.",
+            #         },
+            #         status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            #     )
 
             if Cache.BEARER_TOKEN is None:
                 Cache.BEARER_TOKEN = TwitchCrawler.get_twitch_token(
@@ -133,7 +133,7 @@ class HighlighterModelView(APIView):
 
             df = df.drop("id", axis=1)
             vcd = VideoChatsData(vid, vlen, df)
-            crawler_lock.release()
+            # crawler_lock.release()
 
         vd, _ = Video.objects.get_or_create(id=vcd.vid, duration=vcd.vlen)
 
